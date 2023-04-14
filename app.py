@@ -44,4 +44,4 @@ wait.until(EC.url_changes(driver.current_url))
 # get the page screenshot
 driver.save_screenshot('screenshot.png')
 print('Screenshot saved to screenshot.png')
-# print the 
+# print the

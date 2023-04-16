@@ -3,14 +3,16 @@ import os
 import shutil
 
 
-def create_dir(year, number, number2):
+workbook = openpyxl.load_workbook('./liste-globale-des-PFE.xlsx')
+
+
+def create_dir(year, number, number2, files_not_found):
     file_number = 1
     handle = '123456789/'
     collection = '123456789/2'
 
     print('Creating directory for year: ', year)
 
-    workbook = openpyxl.load_workbook('./liste-globale-des-PFE.xlsx')
     worksheet = workbook['PFE '+str(year)]
 
     column_indices = {}
@@ -49,8 +51,12 @@ def create_dir(year, number, number2):
         xml_string += '<dublin_core schema="dc">\n'
         title = record['title']
         link = None
+        try:
 
-        link = worksheet.cell(row=file_number+1, column=1).hyperlink.target
+            link = worksheet.cell(row=file_number+1, column=1).hyperlink.target
+        except:
+            print('No link found')
+            files_not_found += f'LINK {title} for {year} not found \n \n'
 
         xml_string += f'<dcvalue element="identifier" qualifier="uri">https:&#x2F;&#x2F;sbn.inpt.ac.ma&#x2F;handle&#x2F;123456789&#x2F;{title}</dcvalue>\n'
         for key, value in record.items():
@@ -69,9 +75,13 @@ def create_dir(year, number, number2):
             text_import = f'{link_import}	bundle:ORIGINAL'
             with open(f'./csv/{year}/{number}/contents', 'w', encoding='utf-8') as f:
                 f.write(text_import)
-            print("copying file: ", link)
-            shutil.copy(f'./PFE/{link}', f'./csv/{year}/{number}/')
+            try:
+                shutil.copy(f'./PFE/{link}', f'./csv/{year}/{number}/')
+            except:
+                print('File not found')
+                files_not_found += f'FILE {title} for {year} not found \n \n'
 
+        file_number += 1
         number += 1
 
     for record in records_meta:
@@ -91,16 +101,20 @@ def create_dir(year, number, number2):
         with open(f'./csv/{year}/{number2}/metadata_pfe.xml', 'w', encoding='utf-8') as f:
             f.write(xml_string)
         number2 += 1
-    return number, number2
+    return number, number2, files_not_found
 
 
 number = 1
 number2 = 1
-
+files_not_found = ''
 # years from 1999 to 2020
 years = [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,
          2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
 for year in years:
-    number, number2 = create_dir(year, number, number2)
+    number, number2, files_not_found = create_dir(
+        year, number, number2, files_not_found)
     print('Done for year: ', year)
     print('----------------------------------------')
+
+with open(f'./csv/files_not_found.txt', 'w', encoding='utf-8') as f:
+    f.write(files_not_found)

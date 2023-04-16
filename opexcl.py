@@ -4,7 +4,7 @@ import shutil
 
 
 def create_dir(year, number, number2):
-
+    file_number = 1
     handle = '123456789/'
     collection = '123456789/2'
 
@@ -26,10 +26,8 @@ def create_dir(year, number, number2):
         record = {}
         record_meta = {}
         for column_name, column_index in column_indices.items():
-
             if column_name == 'Titre':
                 record['title'] = row[0]
-
             elif column_name == 'Auteur':
                 record['publisher'] = row[1]
             elif column_name == 'Sujet':
@@ -51,11 +49,9 @@ def create_dir(year, number, number2):
         xml_string += '<dublin_core schema="dc">\n'
         title = record['title']
         link = None
-        try:
-            link = worksheet.cell(row=number+1, column=1).hyperlink.target
-            linkes = worksheet.cell(row=number+1, column=1).value
-        except AttributeError:
-            pass
+
+        link = worksheet.cell(row=file_number+1, column=1).hyperlink.target
+
         xml_string += f'<dcvalue element="identifier" qualifier="uri">https:&#x2F;&#x2F;sbn.inpt.ac.ma&#x2F;handle&#x2F;123456789&#x2F;{title}</dcvalue>\n'
         for key, value in record.items():
             xml_string += f'<dcvalue element="{key}" qualifier="none">{value}</dcvalue>\n'
@@ -73,7 +69,7 @@ def create_dir(year, number, number2):
             text_import = f'{link_import}	bundle:ORIGINAL'
             with open(f'./csv/{year}/{number}/contents', 'w', encoding='utf-8') as f:
                 f.write(text_import)
-
+            print("copying file: ", link)
             shutil.copy(f'./PFE/{link}', f'./csv/{year}/{number}/')
 
         number += 1

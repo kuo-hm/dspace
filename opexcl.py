@@ -1,9 +1,19 @@
+import string
 import openpyxl
 import os
 import shutil
 
 
 workbook = openpyxl.load_workbook('./liste-globale-des-PFE.xlsx')
+
+
+def remove_non_english_chars(text):
+    printable = set(string.printable) - set('&')
+    new_string = ""
+    for char in text:
+        if char in printable and ord(char) < 128:
+            new_string += char
+    return new_string
 
 
 def create_dir(year, number, number2, files_not_found):
@@ -58,10 +68,36 @@ def create_dir(year, number, number2, files_not_found):
             print('No link found')
             files_not_found += f'LINK {title} for {year} not found \n \n'
 
-        xml_string += f'<dcvalue element="identifier" qualifier="uri">https:&#x2F;&#x2F;sbn.inpt.ac.ma&#x2F;handle&#x2F;123456789&#x2F;{title}</dcvalue>\n'
+        xml_string += f'<dcvalue element="identifier" qualifier="uri">https:&#x2F;&#x2F;sbn.inpt.ac.ma&#x2F;handle&#x2F;123456789&#x2F;{number}</dcvalue>\n'
         for key, value in record.items():
-            xml_string += f'<dcvalue element="{key}" qualifier="none">{value}</dcvalue>\n'
+            if key == "author":
+                if value is not None:
+                    value = remove_non_english_chars(str(value))
+                xml_string += f'<dcvalue element="contributor" qualifier="author">{value}</dcvalue>\n'
+            else:
+                if value is not None:
+                    value = remove_non_english_chars(str(value))
+                xml_string += f'<dcvalue element="{key}" qualifier="none">{value}</dcvalue>\n'
         xml_string += '</dublin_core>'
+
+        file = ''
+        if link is not None:
+            link = link.replace('../../Sauvegarde/', '')
+            link_import = link.replace('PFE '+str(year)+'/', '')
+            link_copy = remove_non_english_chars(link_import)
+            text_import = f'{link_copy}	bundle:ORIGINAL'
+            with open(f'./csv/{year}/{number}/contents', 'w', encoding='utf-8') as f:
+                f.write(text_import)
+            try:
+                shutil.copy(f'./PFE/{link}',
+                            f'./csv/{year}/{number}/{link_copy}')
+            except:
+                print('File not found')
+                files_not_found += f'FILE {title} for {year} not found \n \n'
+                file_number += 1
+                number += 1
+                continue
+
         with open(f'./csv/{year}/{number}/dublin_core.xml', 'w', encoding='utf-8') as f:
             f.write(xml_string)
         with open(f'./csv/{year}/{number}/collections', 'w', encoding='utf-8') as f:
@@ -69,28 +105,21 @@ def create_dir(year, number, number2, files_not_found):
         with open(f'./csv/{year}/{number}/handle', 'w', encoding='utf-8') as f:
             f.write(handle+str(number))
 
-        if link is not None:
-            link = link.replace('../../Sauvegarde/', '')
-            link_import = link.replace('PFE '+str(year)+'/', '')
-            text_import = f'{link_import}	bundle:ORIGINAL'
-            with open(f'./csv/{year}/{number}/contents', 'w', encoding='utf-8') as f:
-                f.write(text_import)
-            try:
-                shutil.copy(f'./PFE/{link}', f'./csv/{year}/{number}/')
-            except:
-                print('File not found')
-                files_not_found += f'FILE {title} for {year} not found \n \n'
-
         file_number += 1
         number += 1
 
     for record in records_meta:
         xml_string = '<dublin_core schema="pfe">\n'
         for key, value in record.items():
+            if value is not None:
+                value = remove_non_english_chars(str(value))
+                value = value.replace('&', 'and')
             if key == 'encadrants':
                 if value is None:
                     value = ''
-
+                if value is not None:
+                    value = remove_non_english_chars(str(value))
+                    value = value.replace('&', 'and')
                 name_list = value.split('\n')
                 for name in name_list:
                     text = name.strip()
@@ -104,8 +133,8 @@ def create_dir(year, number, number2, files_not_found):
     return number, number2, files_not_found
 
 
-number = 1
-number2 = 1
+number = 12000
+number2 = 12000
 files_not_found = ''
 # years from 1999 to 2020
 years = [1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008,

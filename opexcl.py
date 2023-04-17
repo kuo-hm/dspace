@@ -55,7 +55,6 @@ def create_dir(year, number, number2, files_not_found):
         records.append(record)
         records_meta.append(record_meta)
     for record in records:
-        os.makedirs(f'./csv/{year}/{number}', exist_ok=True)
 
         xml_string = '<?xml version="1.0" encoding="utf-8" standalone="no"?>\n'
         xml_string += '<dublin_core schema="dc">\n'
@@ -86,28 +85,25 @@ def create_dir(year, number, number2, files_not_found):
             link_import = link.replace('PFE '+str(year)+'/', '')
             link_copy = remove_non_english_chars(link_import)
             text_import = f'{link_copy}	bundle:ORIGINAL'
-            with open(f'./csv/{year}/{number}/contents', 'w', encoding='utf-8') as f:
-                f.write(text_import)
+
             try:
+                os.makedirs(f'./csv/{year}/{number}', exist_ok=True)
                 shutil.copy(f'./PFE/{link}',
                             f'./csv/{year}/{number}/{link_copy}')
+                with open(f'./csv/{year}/{number}/contents', 'w', encoding='utf-8') as f:
+                    f.write(text_import)
+                with open(f'./csv/{year}/{number}/dublin_core.xml', 'w', encoding='utf-8') as f:
+                    f.write(xml_string)
+                with open(f'./csv/{year}/{number}/collections', 'w', encoding='utf-8') as f:
+                    f.write(collection)
+                with open(f'./csv/{year}/{number}/handle', 'w', encoding='utf-8') as f:
+                    f.write(handle+str(number))
+
             except:
                 print('File not found')
                 files_not_found += f'FILE {title} for {year} not found \n \n'
-                file_number += 1
-                number += 1
-                continue
-
-        with open(f'./csv/{year}/{number}/dublin_core.xml', 'w', encoding='utf-8') as f:
-            f.write(xml_string)
-        with open(f'./csv/{year}/{number}/collections', 'w', encoding='utf-8') as f:
-            f.write(collection)
-        with open(f'./csv/{year}/{number}/handle', 'w', encoding='utf-8') as f:
-            f.write(handle+str(number))
-
-        file_number += 1
-        number += 1
-
+            file_number += 1
+            number += 1
     for record in records_meta:
         xml_string = '<dublin_core schema="pfe">\n'
         for key, value in record.items():
@@ -127,8 +123,11 @@ def create_dir(year, number, number2, files_not_found):
             else:
                 xml_string += f'<dcvalue element="{key}" qualifier="none">{value}</dcvalue>\n'
         xml_string += '</dublin_core>'
-        with open(f'./csv/{year}/{number2}/metadata_pfe.xml', 'w', encoding='utf-8') as f:
-            f.write(xml_string)
+        try:
+            with open(f'./csv/{year}/{number2}/metadata_pfe.xml', 'w', encoding='utf-8') as f:
+                f.write(xml_string)
+        except:
+            print('File not found')
         number2 += 1
     return number, number2, files_not_found
 

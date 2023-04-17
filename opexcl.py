@@ -31,7 +31,7 @@ def create_dir(year, number, number2, files_not_found):
             if column_name == 'Titre':
                 record['title'] = row[0]
             elif column_name == 'Auteur':
-                record['publisher'] = row[1]
+                record['author'] = row[1]
             elif column_name == 'Sujet':
                 record['description'] = row[2]
             elif column_name == 'Date':
